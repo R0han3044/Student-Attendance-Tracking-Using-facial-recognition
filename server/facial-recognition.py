@@ -28,11 +28,13 @@ class FacialRecognitionSystem:
     def detect_faces(self, image):
         """Detect faces in an image using Haar Cascade"""
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        # Use more sensitive parameters to detect multiple faces in group photos
         faces = self.face_cascade.detectMultiScale(
             gray,
-            scaleFactor=1.1,
-            minNeighbors=5,
-            minSize=(30, 30),
+            scaleFactor=1.05,  # Smaller scale factor for better detection
+            minNeighbors=3,    # Reduced neighbors for more sensitivity
+            minSize=(20, 20),  # Smaller minimum size
+            maxSize=(300, 300), # Add maximum size
             flags=cv2.CASCADE_SCALE_IMAGE
         )
         return faces, gray
@@ -105,19 +107,22 @@ class FacialRecognitionSystem:
             # In real implementation, this would use the trained LBPH model
             student_ids = [1, 2, 3, 4, 5]  # IDs of the pre-registered students
             
-            for i, face in enumerate(faces):
-                if i < len(student_ids):
-                    # Simulate recognition with high confidence
-                    recognitions.append({
-                        "studentId": student_ids[i],
-                        "confidence": round(85 + np.random.random() * 10, 2),  # 85-95% confidence
-                        "boundingBox": {
-                            "x": int(face[0]),
-                            "y": int(face[1]),
-                            "width": int(face[2]),
-                            "height": int(face[3])
-                        }
-                    })
+            # Simulate recognizing up to 5 students from the group photo
+            num_to_recognize = min(len(faces), len(student_ids))
+            
+            for i in range(num_to_recognize):
+                face = faces[i]
+                # Simulate recognition with high confidence
+                recognitions.append({
+                    "studentId": student_ids[i],
+                    "confidence": round(85 + np.random.random() * 10, 2),  # 85-95% confidence
+                    "boundingBox": {
+                        "x": int(face[0]),
+                        "y": int(face[1]),
+                        "width": int(face[2]),
+                        "height": int(face[3])
+                    }
+                })
 
             return {
                 "success": True,
