@@ -7,6 +7,14 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
+// Extend session interface
+declare module 'express-session' {
+  interface SessionData {
+    userId?: number;
+    role?: string;
+  }
+}
+
 // Configure multer for file uploads
 const upload = multer({ 
   dest: 'uploads/',
@@ -24,8 +32,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
-      // In production, use proper session management
-      req.session = { userId: user.id, role: user.role };
+      // Store user session
+      (req.session as any).userId = user.id;
+      (req.session as any).role = user.role;
       
       res.json({ 
         user: { 
@@ -42,17 +51,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/auth/logout", (req, res) => {
-    req.session = null;
-    res.json({ message: "Logged out successfully" });
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Failed to logout" });
+      }
+      res.clearCookie('connect.sid');
+      res.json({ message: "Logged out successfully" });
+    });
   });
 
   app.get("/api/auth/me", async (req, res) => {
     try {
-      if (!req.session?.userId) {
+      if (!(req.session as any)?.userId) {
         return res.status(401).json({ message: "Not authenticated" });
       }
 
-      const user = await storage.getUser(req.session.userId);
+      const user = await storage.getUser((req.session as any).userId);
       if (!user) {
         return res.status(401).json({ message: "User not found" });
       }
@@ -183,7 +197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 status: 'present' as const,
                 timeIn: now,
                 recognitionConfidence: recognition.confidence,
-                markedBy: req.session?.userId || null,
+                markedBy: (req.session as any)?.userId || null,
               };
 
               attendanceRecords.push(attendanceRecord);
