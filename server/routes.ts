@@ -6,6 +6,11 @@ import { spawn } from "child_process";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { fileURLToPath } from 'url';
+
+// Get __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Extend session interface
 declare module 'express-session' {

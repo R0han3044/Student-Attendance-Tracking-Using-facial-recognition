@@ -292,15 +292,15 @@ export class DatabaseStorage implements IStorage {
     const classIds = teacherClasses.map(c => c.id);
 
     // Get today's attendance for all classes
-    const todayAttendance = await db
+    const todayAttendance = classIds.length > 0 ? await db
       .select()
       .from(attendanceRecords)
       .where(
         and(
-          sql`${attendanceRecords.classId} = ANY(${classIds})`,
+          sql`${attendanceRecords.classId} IN (${sql.join(classIds.map(id => sql`${id}`), sql`, `)})`,
           sql`${attendanceRecords.date} >= ${today}`
         )
-      );
+      ) : [];
 
     const presentToday = todayAttendance.filter(a => a.status === 'present' || a.status === 'late').length;
     const totalStudents = await db
